@@ -57,36 +57,127 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+int A4988_POWER_GPIO = GPIOB; //PB8 D15
+int A4988_POWER_PIN = GPIO_PIN_8;
+
+int ENABLE_GPIO = GPIOB;// PB9 D14
+int ENABLE_PIN = GPIO_PIN_9;
+
+int DIR_FRONT_LEFT_GPIO = GPIOA; // PA5 D13
+int DIR_FRONT_LEFT_PIN = GPIO_PIN_5;
+int STEP_FRONT_LEFT_GPIO = GPIOA; // PA6 D12
+int STEP_FRONT_LEFT_PIN = GPIO_PIN_6;
+
+int DIR_BACK_LEFT_GPIO = GPIOA; // PA7 D11
+int DIR_BACK_LEFT_PIN = GPIO_PIN_7;
+int STEP_BACK_LEFT_GPIO = GPIOA; // PA8 D7
+int STEP_BACK_LEFT_PIN = GPIO_PIN_8;
+
+int DIR_FRONT_RIGHT_GPIO = GPIOB; // PB10 D6
+int DIR_FRONT_RIGHT_PIN = GPIO_PIN_10;
+int STEP_FRONT_RIGHT_GPIO = GPIOB; // PB4 D5
+int STEP_FRONT_RIGHT_PIN = GPIO_PIN_4;
+
+int DIR_BACK_RIGHT_GPIO = GPIOB;// PB5 D4
+int DIR_BACK_RIGHT_PIN = GPIO_PIN_5;
+int STEP_BACK_RIGHT_GPIO = GPIOB; // PB3 D3
+int STEP_BACK_RIGHT_PIN = GPIO_PIN_3;
+
+
+
+
+
+void set_forward_dir()
+{
+	HAL_GPIO_WritePin(DIR_FRONT_LEFT_GPIO, DIR_FRONT_LEFT_PIN, 1);
+	HAL_GPIO_WritePin(DIR_BACK_LEFT_GPIO, DIR_BACK_LEFT_PIN, 1);
+	HAL_GPIO_WritePin(DIR_FRONT_RIGHT_GPIO, DIR_FRONT_RIGHT_PIN, 1);
+	HAL_GPIO_WritePin(DIR_BACK_RIGHT_GPIO, DIR_BACK_RIGHT_PIN, 1);
+}
+void set_backward_dir()
+{
+	HAL_GPIO_WritePin(DIR_FRONT_LEFT_GPIO, DIR_FRONT_LEFT_PIN, 0);
+	HAL_GPIO_WritePin(DIR_BACK_LEFT_GPIO, DIR_BACK_LEFT_PIN, 0);
+	HAL_GPIO_WritePin(DIR_FRONT_RIGHT_GPIO, DIR_FRONT_RIGHT_PIN, 0);
+	HAL_GPIO_WritePin(DIR_BACK_RIGHT_GPIO, DIR_BACK_RIGHT_PIN, 0);
+}
+void set_left_dir()
+{
+	HAL_GPIO_WritePin(DIR_FRONT_LEFT_GPIO, DIR_FRONT_LEFT_PIN, 0);
+	HAL_GPIO_WritePin(DIR_BACK_LEFT_GPIO, DIR_BACK_LEFT_PIN, 1);
+	HAL_GPIO_WritePin(DIR_FRONT_RIGHT_GPIO, DIR_FRONT_RIGHT_PIN, 1);
+	HAL_GPIO_WritePin(DIR_BACK_RIGHT_GPIO, DIR_BACK_RIGHT_PIN, 0);
+}
+void set_right_dir()
+{
+	HAL_GPIO_WritePin(DIR_FRONT_LEFT_GPIO, DIR_FRONT_LEFT_PIN, 1);
+	HAL_GPIO_WritePin(DIR_BACK_LEFT_GPIO, DIR_BACK_LEFT_PIN, 0);
+	HAL_GPIO_WritePin(DIR_FRONT_RIGHT_GPIO, DIR_FRONT_RIGHT_PIN, 0);
+	HAL_GPIO_WritePin(DIR_BACK_RIGHT_GPIO, DIR_BACK_RIGHT_PIN, 1);
+}
+void set_ccw_dir()
+{
+	HAL_GPIO_WritePin(DIR_FRONT_LEFT_GPIO, DIR_FRONT_LEFT_PIN, 0);
+		HAL_GPIO_WritePin(DIR_BACK_LEFT_GPIO, DIR_BACK_LEFT_PIN, 0);
+		HAL_GPIO_WritePin(DIR_FRONT_RIGHT_GPIO, DIR_FRONT_RIGHT_PIN, 1);
+		HAL_GPIO_WritePin(DIR_BACK_RIGHT_GPIO, DIR_BACK_RIGHT_PIN, 1);
+}
+void set_cw_dir()
+{
+	HAL_GPIO_WritePin(DIR_FRONT_LEFT_GPIO, DIR_FRONT_LEFT_PIN, 1);
+		HAL_GPIO_WritePin(DIR_BACK_LEFT_GPIO, DIR_BACK_LEFT_PIN, 1);
+		HAL_GPIO_WritePin(DIR_FRONT_RIGHT_GPIO, DIR_FRONT_RIGHT_PIN, 0);
+		HAL_GPIO_WritePin(DIR_BACK_RIGHT_GPIO, DIR_BACK_RIGHT_PIN, 0);
+}
+void move(int steps, void(*func)() ) {
+	HAL_GPIO_WritePin(ENABLE_GPIO, ENABLE_PIN, 0);
+	func();
+	for(int i = 0;i < steps;i++)
+	{
+        HAL_GPIO_WritePin(STEP_FRONT_LEFT_GPIO, STEP_FRONT_LEFT_PIN, 1);
+        HAL_GPIO_WritePin(STEP_BACK_LEFT_GPIO, STEP_BACK_LEFT_PIN, 1);
+        HAL_GPIO_WritePin(STEP_FRONT_RIGHT_GPIO, STEP_FRONT_RIGHT_PIN, 1);
+        HAL_GPIO_WritePin(STEP_BACK_RIGHT_GPIO, STEP_BACK_RIGHT_PIN, 1);
+
+        HAL_Delay(1); // Adjust delay for desired speed
+        HAL_GPIO_WritePin(STEP_FRONT_LEFT_GPIO, STEP_FRONT_LEFT_PIN, 0);
+		HAL_GPIO_WritePin(STEP_BACK_LEFT_GPIO, STEP_BACK_LEFT_PIN, 0);
+		HAL_GPIO_WritePin(STEP_FRONT_RIGHT_GPIO, STEP_FRONT_RIGHT_PIN, 0);
+		HAL_GPIO_WritePin(STEP_BACK_RIGHT_GPIO, STEP_BACK_RIGHT_PIN, 0);
+        HAL_Delay(1); // Adjust delay for desired speed
+	}
+	HAL_GPIO_WritePin(ENABLE_GPIO, ENABLE_PIN, 1);
+}
+void move_forward(steps)
+{
+	move(steps, set_forward_dir);
+}
+void move_backward(steps)
+{
+	move(steps, set_backward_dir);
+}
+void move_left(steps)
+{
+	move(steps, set_left_dir);
+}
+void move_right(steps)
+{
+	move(steps, set_right_dir);
+}
+void move_ccw(steps)
+{
+	move(steps, set_ccw_dir);
+}
+void move_cw(steps)
+{
+	move(steps, set_cw_dir);
+}
 /* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
   * @retval int
   */
-
-int DIR_PIN_LEFT = GPIO_PIN_4;
-int STEP_PIN_LEFT = GPIO_PIN_5;
-int DIR_PIN_RIGHT = GPIO_PIN_6;
-int STEP_PIN_RIGHT = GPIO_PIN_7;
-
-// Stepper motor control logic
-void move_stepper_motor_forward() {
-	HAL_GPIO_WritePin(GPIOB, DIR_PIN_LEFT, 1);
-	HAL_GPIO_WritePin(GPIOB, DIR_PIN_RIGHT, 0);
-	while(1)
-	{
-
-        HAL_GPIO_WritePin(GPIOB, STEP_PIN_LEFT, 1);
-        HAL_GPIO_WritePin(GPIOB, STEP_PIN_RIGHT, 1);
-        HAL_Delay(1); // Adjust delay for desired speed
-        HAL_GPIO_WritePin(GPIOB, STEP_PIN_LEFT, 0);
-        HAL_GPIO_WritePin(GPIOB, STEP_PIN_RIGHT, 0);
-        HAL_Delay(1); // Adjust delay for desired speed
-	}
-
-}
-
-
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -120,8 +211,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  move_forward(200);
+	  HAL_Delay(2000);
+	  move_right(400);
+	  HAL_Delay(2000);
+	  move_backward(200);
+	  HAL_Delay(2000);
+	  move_left(400);
+	  HAL_Delay(2000);
+	  move_ccw(200);
+	  HAL_Delay(2000);
+	  move_cw(200);
+	  HAL_Delay(2000);
+
     /* USER CODE END WHILE */
-	  move_stepper_motor_forward();
 
     /* USER CODE BEGIN 3 */
   }
@@ -225,10 +328,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5
+                          |GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -236,15 +340,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : PA5 PA6 PA7 PA8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB4 PB5 PB6 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  /*Configure GPIO pins : PB10 PB3 PB4 PB5
+                           PB6 PB7 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5
+                          |GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
