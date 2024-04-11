@@ -1,52 +1,48 @@
-# Prerequisites
-*.d
+# STM32CubeIDE specific
+Debug/
+Release/
+*.mxproject
+*.launch
+.settings/
+.externalToolBuilders/
+.autosave
+*.stackusage
 
-# Object files
+# Compiled Object files
 *.o
-*.ko
-*.obj
+*.d
 *.elf
-
-# Linker output
-*.ilk
 *.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
 *.hex
+*.bin
+*.lss
 
-# Debug files
-*.dSYM/
+# Backup files
+*.bak
+*~
+
+# Other files
+*.log
+*.tlog
+*.lo
+*.dep
+*.i
+*.ii
+*.s
 *.su
-*.idb
+*.dSYM/
+*.d
 *.pdb
+*.idb
+*.tmp
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# Exclude the build directory
+build/
+
+# Exclude temporary files created by editors
+*.swp
+*.*~
+*.lock
+*.DS_Store
+._*
+Thumbs.db
