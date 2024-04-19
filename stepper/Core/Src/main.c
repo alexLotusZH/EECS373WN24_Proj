@@ -73,7 +73,7 @@ uint8_t rx_buffer[32];
 
 
 // receive buffer for PS2 control
-uint8_t answer;
+uint8_t answer[2] = 0;
 
 // status flag for stepper driving
 static uint8_t stepState = 0;
