@@ -43,6 +43,8 @@
 UART_HandleTypeDef hlpuart1;
 UART_HandleTypeDef huart2;
 
+SPI_HandleTypeDef hspi1;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -50,21 +52,65 @@ UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
+static void MX_SPI1_Init(void);
 static void MX_LPUART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t tx_buff[]={0xae, 0xc1, 0x0e, 0x00};
-uint8_t rx_buff[22];
-
-uint8_t tx_blocks_buff[]={0xae,0xc1,32,2,1,1};
-uint8_t rx_blocks_buff[20];
-
-void detect_object_location(void);
+typedef struct {
+	uint8_t SELECT;
+	uint8_t L3;
+	uint8_t R3;
+	uint8_t START;
+	uint8_t UP;
+	uint8_t RIGHT;
+	uint8_t DOWN;
+	uint8_t LEFT;
+	uint8_t L2;
+	uint8_t R2;
+	uint8_t L1;
+	uint8_t R1;
+	uint8_t TRIANGLE;
+	uint8_t CIRCLE;
+	uint8_t CROSS;
+	uint8_t SQUARE;
+	uint8_t RX;
+	uint8_t RY;
+	uint8_t LX;
+	uint8_t LY;
+} PS2Buttons;
+void PS2_Update(PS2Buttons* PS2_PS2) {
+	uint8_t transmit[9] = { 0x01, 0x42 };
+	uint8_t receive[9] = { 0x00 };
+	HAL_SPI_TransmitReceive(&hspi1, transmit, receive, 9, 10);
+	if (receive[1] != 0x41 && receive[1] != 0x73) return;
+	uint16_t buttonStatus = receive[3] | (receive[4] << 8);
+	PS2_PS2->SELECT = !((buttonStatus >> 0) & 0x01);
+	PS2_PS2->L3 = !((buttonStatus >> 1) & 0x01);
+	PS2_PS2->R3 = !((buttonStatus >> 2) & 0x01);
+	PS2_PS2->START = !((buttonStatus >> 3) & 0x01);
+	PS2_PS2->UP = !((buttonStatus >> 4) & 0x01);
+	PS2_PS2->RIGHT = !((buttonStatus >> 5) & 0x01);
+	PS2_PS2->DOWN = !((buttonStatus >> 6) & 0x01);
+	PS2_PS2->LEFT = !((buttonStatus >> 7) & 0x01);
+	PS2_PS2->L2 = !((buttonStatus >> 8) & 0x01);
+	PS2_PS2->R2 = !((buttonStatus >> 9) & 0x01);
+	PS2_PS2->L1 = !((buttonStatus >> 10) & 0x01);
+	PS2_PS2->R1 = !((buttonStatus >> 11) & 0x01);
+	PS2_PS2->TRIANGLE = !((buttonStatus >> 12) & 0x01);
+	PS2_PS2->CIRCLE = !((buttonStatus >> 13) & 0x01);
+	PS2_PS2->CROSS = !((buttonStatus >> 14) & 0x01);
+	PS2_PS2->SQUARE = !((buttonStatus >> 15) & 0x01);
+	if (receive[1] != 0x73) return;
+	PS2_PS2->RX = receive[5];
+	PS2_PS2->RY = receive[6];
+	PS2_PS2->LX = receive[7];
+	PS2_PS2->LY = receive[8];
+}
 /* USER CODE END 0 */
 
 /**
@@ -95,10 +141,11 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
+  MX_SPI1_Init();
   MX_LPUART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-//  HAL_UART_Receive_DMA(&huart2, rx_buff, 22);
+  PS2Buttons PS2;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,14 +155,19 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_UART_Transmit(&huart2, tx_blocks_buff, 6, 1000);
-	  HAL_UART_Receive(&huart2, rx_blocks_buff, 20, 1000);
-	  for(int i = 0; i< 20; i++){
-		  printf("%d   ", rx_blocks_buff[i]);
-	  }
-	  printf("\n\r");
-//	  HAL_UART_Transmit(&huart2, tx_buff, 4, 1000);
-//	  HAL_UART_Receive(&huart2, rx_buff, 22, 1000);
+	  HAL_GPIO_WritePin(SS_GPIO_Port, SS_Pin, GPIO_PIN_RESET);
+	  PS2_Update(&PS2);
+	  uint8_t answer = 0;
+	  answer |= PS2.LEFT;
+	  answer |= PS2.RIGHT << 1;
+	  answer |= PS2.UP << 2;
+	  answer |= PS2.DOWN << 3;
+	  answer |= PS2.TRIANGLE << 4;
+	  answer |= PS2.CROSS << 5;
+	  answer |= PS2.SQUARE << 6;
+	  HAL_UART_Transmit(&huart2, &answer, 1, 100);
+	  printf("%d\n\r", answer);
+	  HAL_GPIO_WritePin(SS_GPIO_Port, SS_Pin, GPIO_PIN_SET);
 	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
@@ -262,6 +314,46 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_LSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 7;
+  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -282,6 +374,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   HAL_PWREx_EnableVddIO2();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SS_GPIO_Port, SS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PE2 PE3 */
   GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
@@ -327,14 +422,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB0 */
@@ -471,13 +558,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB4 PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
+  /*Configure GPIO pins : PB3 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SS_Pin */
+  GPIO_InitStruct.Pin = SS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB8 PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
@@ -500,17 +594,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  HAL_UART_Receive_DMA(&huart2, rx_buff, 22); //You need to toggle a breakpoint on this line!
-}
-
-void detect_object_location()
-{
-	HAL_UART_Receive(&huart2, rx_blocks_buff, 20, 1000);
-
-}
-
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #else
