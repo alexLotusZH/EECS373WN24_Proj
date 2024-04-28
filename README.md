@@ -1,5 +1,5 @@
 # EECS373WN24_Proj
 
-u know, luozhen, jxt, lmj, zzh are my brothers. I will bring my talent to Ann Arbor.
+A table tennis launcher that can be manually and automatically driven. 
 
-A table tennis launcher.
+Built by: Zheng Luo, Zhiheng Zhang, Minjian Li, Xinting Jiang
